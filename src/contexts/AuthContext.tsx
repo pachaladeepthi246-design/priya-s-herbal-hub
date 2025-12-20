@@ -21,6 +21,8 @@ interface Order {
   total_amount: number;
   items: any;
   created_at: string;
+  payment_method?: string;
+  shipping_address?: any;
 }
 
 interface AuthContextType {
@@ -211,6 +213,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           status: order.status,
           total_amount: order.total_amount,
           items: order.items,
+          payment_method: order.payment_method,
+          shipping_address: order.shipping_address,
         })
         .select()
         .single();
