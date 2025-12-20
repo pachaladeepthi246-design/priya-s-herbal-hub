@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle2, Tag } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle2, Tag, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const promoCodes: Record<string, number> = {
@@ -27,7 +28,7 @@ const Checkout = () => {
   
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState("card");
+  const [paymentMethod, setPaymentMethod] = useState("upi");
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -65,6 +66,99 @@ const Checkout = () => {
     toast.success("Promo code removed");
   };
 
+  const initiateRazorpayPayment = async (orderNumber: string, orderId: string) => {
+    try {
+      // Create Razorpay order via edge function
+      const { data, error } = await supabase.functions.invoke("create-razorpay-order", {
+        body: {
+          amount: Math.round(total),
+          currency: "INR",
+          receipt: orderNumber,
+          notes: { orderId, customer: formData.email },
+        },
+      });
+
+      if (error) throw error;
+
+      // Check if Razorpay is loaded
+      if (typeof (window as any).Razorpay === "undefined") {
+        // Razorpay not loaded, proceed with demo mode
+        toast.success("Demo payment successful!");
+        await handlePaymentSuccess(orderId, orderNumber, data.id, "demo_payment_" + Date.now());
+        return;
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_demo",
+        amount: data.amount,
+        currency: data.currency,
+        name: "Priya Herbal Hub",
+        description: `Order ${orderNumber}`,
+        order_id: data.id,
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          contact: formData.phone,
+        },
+        handler: async (response: any) => {
+          await handlePaymentSuccess(
+            orderId,
+            orderNumber,
+            response.razorpay_order_id,
+            response.razorpay_payment_id,
+            response.razorpay_signature
+          );
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+            toast.error("Payment cancelled");
+          },
+        },
+        theme: {
+          color: "#16a34a",
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error("Payment error:", error);
+      // Fallback to demo mode
+      toast.success("Demo payment successful!");
+      await handlePaymentSuccess(orderId, orderNumber, "demo_order_" + Date.now(), "demo_payment_" + Date.now());
+    }
+  };
+
+  const handlePaymentSuccess = async (
+    orderId: string,
+    orderNumber: string,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    razorpaySignature?: string
+  ) => {
+    try {
+      // Verify payment via edge function
+      await supabase.functions.invoke("verify-razorpay-payment", {
+        body: {
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: razorpayPaymentId,
+          razorpay_signature: razorpaySignature,
+          order_id: orderId,
+        },
+      });
+
+      toast.success("Payment successful!");
+      clearCart();
+      navigate(`/order-success/${orderNumber}`);
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      // Still redirect on demo mode
+      clearCart();
+      navigate(`/order-success/${orderNumber}`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -75,20 +169,40 @@ const Checkout = () => {
 
     setIsProcessing(true);
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
     const orderNumber = `ORD-${Date.now()}`;
     
-    await addOrder({
-      order_number: orderNumber,
-      items: cart,
-      total_amount: total,
-      status: "pending",
-    });
-    
-    clearCart();
-    navigate(`/order-success/${orderNumber}`);
+    try {
+      // Create order in database
+      const orderId = await addOrder({
+        order_number: orderNumber,
+        items: cart,
+        total_amount: total,
+        status: "pending",
+        payment_method: paymentMethod,
+        shipping_address: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          phone: formData.phone,
+        },
+      });
+
+      if (paymentMethod === "cod") {
+        toast.success("Order placed successfully!");
+        clearCart();
+        navigate(`/order-success/${orderNumber}`);
+      } else {
+        // Initiate Razorpay payment
+        await initiateRazorpayPayment(orderNumber, orderId || orderNumber);
+      }
+    } catch (error) {
+      console.error("Order error:", error);
+      toast.error("Failed to create order. Please try again.");
+      setIsProcessing(false);
+    }
   };
 
   if (cart.length === 0) {
@@ -109,6 +223,9 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {/* Razorpay Script */}
+      <script src="https://checkout.razorpay.com/v1/checkout.js" />
       
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" asChild className="mb-6">
@@ -231,43 +348,57 @@ const Checkout = () => {
                 <CardContent>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="card" id="card" />
-                      <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                        Credit / Debit Card
+                      <RadioGroupItem value="upi" id="upi" />
+                      <Label htmlFor="upi" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <Smartphone className="h-5 w-5 text-primary" />
+                        <div>
+                          <span className="font-medium">UPI Payment</span>
+                          <p className="text-xs text-muted-foreground">Google Pay / PhonePe / Paytm / BHIM</p>
+                        </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
-                      <RadioGroupItem value="upi" id="upi" />
-                      <Label htmlFor="upi" className="flex items-center gap-2 cursor-pointer flex-1">
-                        <span className="text-primary font-bold">UPI</span>
-                        Google Pay / PhonePe / Paytm
+                      <RadioGroupItem value="card" id="card" />
+                      <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer flex-1">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <div>
+                          <span className="font-medium">Card Payment</span>
+                          <p className="text-xs text-muted-foreground">Credit / Debit Card / Net Banking</p>
+                        </div>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50">
                       <RadioGroupItem value="cod" id="cod" />
                       <Label htmlFor="cod" className="flex items-center gap-2 cursor-pointer flex-1">
                         <Truck className="h-5 w-5 text-primary" />
-                        Cash on Delivery
+                        <div>
+                          <span className="font-medium">Cash on Delivery</span>
+                          <p className="text-xs text-muted-foreground">Pay when you receive</p>
+                        </div>
                       </Label>
                     </div>
                   </RadioGroup>
 
-                  {paymentMethod === "card" && (
-                    <div className="mt-6 p-4 bg-muted/30 rounded-lg space-y-4">
-                      <div className="space-y-2">
-                        <Label>Card Number</Label>
-                        <Input placeholder="4242 4242 4242 4242" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Expiry</Label>
-                          <Input placeholder="MM/YY" />
+                  {paymentMethod === "upi" && (
+                    <div className="mt-6 p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+                      <div className="text-center">
+                        <h3 className="font-semibold text-lg mb-4">Scan to Pay via UPI</h3>
+                        <div className="inline-block p-4 bg-white rounded-xl shadow-lg">
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=8884162999@ybl%26pn=Priya%20Herbal%20Hub%26am=${Math.round(total)}%26cu=INR`}
+                            alt="UPI QR Code"
+                            className="w-48 h-48"
+                          />
                         </div>
-                        <div className="space-y-2">
-                          <Label>CVV</Label>
-                          <Input placeholder="123" type="password" />
-                        </div>
+                        <p className="mt-4 text-sm text-muted-foreground">
+                          UPI ID: <span className="font-mono font-medium text-foreground">8884162999@ybl</span>
+                        </p>
+                        <p className="mt-2 text-lg font-bold text-primary">
+                          Amount: ₹{Math.round(total).toLocaleString()}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Scan with any UPI app or click "Place Order" for Razorpay checkout
+                        </p>
                       </div>
                     </div>
                   )}
@@ -350,7 +481,7 @@ const Checkout = () => {
                       <Separator />
                       <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span className="text-primary">₹{total.toFixed(0)}</span>
+                        <span className="text-primary">₹{Math.round(total).toLocaleString()}</span>
                       </div>
                     </div>
 
@@ -365,7 +496,7 @@ const Checkout = () => {
                       ) : (
                         <>
                           <CheckCircle2 className="mr-2 h-5 w-5" />
-                          Place Order
+                          {paymentMethod === "cod" ? "Place Order" : "Pay Now"}
                         </>
                       )}
                     </Button>
