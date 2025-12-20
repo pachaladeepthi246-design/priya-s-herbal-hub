@@ -25,6 +25,7 @@ import Wishlist from "./pages/Wishlist";
 import Compare from "./pages/Compare";
 import Login from "./pages/Login";
 import GoalPage from "./pages/GoalPage";
+import Admin from "./pages/Admin";
 import FAQ from "./pages/FAQ";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -63,6 +64,7 @@ const App = () => (
                     <Route path="/resources/:slug" element={<ArticleDetail />} />
                     <Route path="/testimonials" element={<Testimonials />} />
                     <Route path="/goals/:type" element={<GoalPage />} />
+                    <Route path="/admin" element={<Admin />} />
                     <Route path="/faq" element={<FAQ />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />

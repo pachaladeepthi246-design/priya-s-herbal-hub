@@ -89,9 +89,6 @@ const Checkout = () => {
     
     clearCart();
     navigate(`/order-success/${orderNumber}`);
-    
-    clearCart();
-    navigate(`/order-success/${orderNumber}`);
   };
 
   if (cart.length === 0) {
