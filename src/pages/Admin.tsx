@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, Package, ShoppingCart, BarChart3, Settings, Shield, 
-  TrendingUp, DollarSign, Eye, Trash2, Edit, Plus, Check, X
+  TrendingUp, DollarSign, Eye, Trash2, Edit, Plus, Check, X, Mail
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { SalesAnalytics } from "@/components/admin/SalesAnalytics";
+import { ProductManagement } from "@/components/admin/ProductManagement";
 
 interface UserData {
   id: string;
@@ -159,6 +161,36 @@ const Admin = () => {
     }
   };
 
+  const sendOrderEmail = async (order: OrderData, emailType: "confirmation" | "shipped" | "delivered") => {
+    try {
+      // Get user email from profiles
+      if (!order.user_id) return;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email, full_name")
+        .eq("user_id", order.user_id)
+        .single();
+
+      if (!profile?.email) return;
+
+      await supabase.functions.invoke("send-order-email", {
+        body: {
+          orderId: order.id,
+          type: emailType,
+          recipientEmail: profile.email,
+          recipientName: profile.full_name || "Customer",
+          orderNumber: order.order_number,
+          orderTotal: order.total_amount,
+        },
+      });
+
+      toast.success(`${emailType} email sent`);
+    } catch (error) {
+      console.error("Error sending email:", error);
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
       const { error } = await supabase
@@ -168,9 +200,21 @@ const Admin = () => {
 
       if (error) throw error;
 
+      const updatedOrder = orders.find((o) => o.id === orderId);
+      
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o))
       );
+      
+      // Send email notification based on status change
+      if (updatedOrder) {
+        if (status === "shipped") {
+          sendOrderEmail({ ...updatedOrder, status }, "shipped");
+        } else if (status === "delivered") {
+          sendOrderEmail({ ...updatedOrder, status }, "delivered");
+        }
+      }
+      
       toast.success("Order status updated");
     } catch (error) {
       toast.error("Failed to update order status");
@@ -293,12 +337,39 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="orders" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+        <Tabs defaultValue="analytics" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              <span className="hidden sm:inline">Orders</span>
+            </TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              <Package className="h-4 w-4" />
+              <span className="hidden sm:inline">Products</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2">
+              <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline">Reviews</span>
+            </TabsTrigger>
           </TabsList>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-4">
+            <SalesAnalytics orders={orders.map(o => ({ ...o, items: [] }))} />
+          </TabsContent>
+
+          {/* Products Tab */}
+          <TabsContent value="products" className="space-y-4">
+            <ProductManagement />
+          </TabsContent>
 
           <TabsContent value="orders" className="space-y-4">
             <Card>
