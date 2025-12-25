@@ -64,6 +64,8 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/9e0a9a91-da8c-46ed-a5dc-c8ebe2f3c489) and click on Share -> Publish.
 
+For more detailed production deployment instructions (Vercel / Coolify), see `DEPLOYMENT.md` in the repo.
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!

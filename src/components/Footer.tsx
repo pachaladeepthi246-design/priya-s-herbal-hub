@@ -89,9 +89,14 @@ const Footer = () => {
         </div>
 
         <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} PriyaHerbalHub. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center md:items-start space-y-1">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} PriyaHerbalHub. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Design developed by <a href="https://www.gudeitsol.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary">www.gudeitsol.com</a>
+            </p>
+          </div>
           <div className="flex space-x-6">
             <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
               Privacy Policy

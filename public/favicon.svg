@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>PriyaHerbalHub</title>
+  <rect width="64" height="64" fill="#fff" rx="8"/>
+  <!-- Colored ring approximation -->
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#4fd1c5" stroke-width="6" stroke-linecap="round"/>
+  <!-- Simple GS monogram -->
+  <g transform="translate(16,14) scale(1)">
+    <path d="M8 4 L18 4 L18 12 L8 12 Z" fill="#000" />
+    <path d="M8 28 L16 28 L16 12" stroke="#000" stroke-width="2" fill="none" />
+    <path d="M30 4 L24 4 L24 28 L30 28 C36 28 36 22 36 22 L36 10 C36 10 36 4 30 4 Z" fill="#000"/>
+  </g>
+</svg>
