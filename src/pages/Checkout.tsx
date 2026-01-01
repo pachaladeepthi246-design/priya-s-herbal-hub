@@ -68,17 +68,34 @@ const Checkout = () => {
 
   const initiateRazorpayPayment = async (orderNumber: string, orderId: string) => {
     try {
-      // Create Razorpay order via edge function
+      // Get current session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please login to complete payment");
+        navigate("/login");
+        return;
+      }
+
+      // Create Razorpay order via edge function (auth token sent automatically)
       const { data, error } = await supabase.functions.invoke("create-razorpay-order", {
         body: {
           amount: Math.round(total),
           currency: "INR",
           receipt: orderNumber,
+          order_id: orderId,
           notes: { orderId, customer: formData.email },
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message?.includes("Unauthorized")) {
+          toast.error("Session expired. Please login again.");
+          navigate("/login");
+          return;
+        }
+        throw error;
+      }
 
       // Check if Razorpay is loaded
       if (typeof (window as any).Razorpay === "undefined") {

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,7 +12,68 @@ serve(async (req) => {
   }
 
   try {
-    const { amount, currency = "INR", receipt, notes } = await req.json();
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - No authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Create Supabase client with user's token to verify authentication
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Authenticated user: ${user.id}`);
+
+    const { amount, currency = "INR", receipt, notes, order_id } = await req.json();
+
+    // Validate the order belongs to this user (if order_id is provided)
+    if (order_id) {
+      const { data: orderData, error: orderError } = await supabase
+        .from("orders")
+        .select("id, user_id, total_amount")
+        .eq("id", order_id)
+        .single();
+
+      if (orderError || !orderData) {
+        return new Response(
+          JSON.stringify({ error: "Order not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify the order belongs to the authenticated user
+      if (orderData.user_id && orderData.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized - Order does not belong to user" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Verify the amount matches the order total
+      if (Math.abs(orderData.total_amount - amount) > 0.01) {
+        return new Response(
+          JSON.stringify({ error: "Amount mismatch" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID");
     const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
@@ -46,7 +108,10 @@ serve(async (req) => {
         amount: amount * 100, // Razorpay expects amount in paise
         currency,
         receipt,
-        notes,
+        notes: {
+          ...notes,
+          user_id: user.id, // Add user_id to notes for tracking
+        },
       }),
     });
 
