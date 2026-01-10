@@ -1,3 +1,5 @@
+# PriyaHerbalHub - Robots.txt
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +14,16 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemaps
+Sitemap: https://priyaherbalhub.com/sitemap.xml
+
+# Crawl-delay for being nice to search engines
+Crawl-delay: 1
+
+# Disallow admin and private routes
+Disallow: /admin
+Disallow: /login
+Disallow: /cart
+Disallow: /checkout
+Disallow: /wishlist

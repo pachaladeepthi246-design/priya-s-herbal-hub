@@ -1,10 +1,41 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import priyaLogo from "@/assets/priya-logo.png";
 
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("subscribe-newsletter", {
+        body: { email, source: "footer" },
+      });
+
+      if (error) throw error;
+      
+      toast.success(data.message || "Successfully subscribed!");
+      setEmail("");
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast.error("Failed to subscribe. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <footer className="bg-card border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -22,17 +53,25 @@ const Footer = () => {
               Transform your life with premium herbal nutrition and wellness products. Join thousands who've achieved their health goals with us.
             </p>
             <div className="flex space-x-2">
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                <Facebook className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hover:bg-primary/10" asChild>
+                <a href="https://facebook.com/priyaherbalhub" target="_blank" rel="noopener noreferrer">
+                  <Facebook className="h-4 w-4" />
+                </a>
               </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                <Instagram className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hover:bg-primary/10" asChild>
+                <a href="https://instagram.com/priyaherbalhub" target="_blank" rel="noopener noreferrer">
+                  <Instagram className="h-4 w-4" />
+                </a>
               </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                <Twitter className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hover:bg-primary/10" asChild>
+                <a href="https://twitter.com/priyaherbalhub" target="_blank" rel="noopener noreferrer">
+                  <Twitter className="h-4 w-4" />
+                </a>
               </Button>
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                <Youtube className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hover:bg-primary/10" asChild>
+                <a href="https://youtube.com/@priyaherbalhub" target="_blank" rel="noopener noreferrer">
+                  <Youtube className="h-4 w-4" />
+                </a>
               </Button>
             </div>
           </div>
@@ -41,11 +80,11 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold text-lg mb-4">Products</h3>
             <ul className="space-y-2">
-              <li><Link to="/products/shakes" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Shakes & Smoothies</Link></li>
-              <li><Link to="/products/teas" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Teas & Beverages</Link></li>
-              <li><Link to="/products/vitamins" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Vitamins & Supplements</Link></li>
-              <li><Link to="/products/skincare" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Skin Care</Link></li>
-              <li><Link to="/products/bodycare" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Body & Hair Care</Link></li>
+              <li><Link to="/products?type=shake" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Shakes & Smoothies</Link></li>
+              <li><Link to="/products?type=tea" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Teas & Beverages</Link></li>
+              <li><Link to="/products?type=supplement" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Vitamins & Supplements</Link></li>
+              <li><Link to="/products?category=skin-care" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Skin Care</Link></li>
+              <li><Link to="/products?category=personal-care" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Body & Hair Care</Link></li>
             </ul>
           </div>
 
@@ -57,7 +96,7 @@ const Footer = () => {
               <li><Link to="/business" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Business Opportunity</Link></li>
               <li><Link to="/resources" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Wellness Resources</Link></li>
               <li><Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Contact Us</Link></li>
-              <li><Link to="/distributor-login" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Distributor Login</Link></li>
+              <li><Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-smooth">Login</Link></li>
             </ul>
           </div>
 
@@ -80,10 +119,20 @@ const Footer = () => {
             </ul>
             <div className="mt-4">
               <h4 className="text-sm font-medium mb-2">Subscribe to Newsletter</h4>
-              <div className="flex space-x-2">
-                <Input placeholder="Your email" className="flex-1" />
-                <Button size="sm" className="btn-glow">Subscribe</Button>
-              </div>
+              <form onSubmit={handleSubscribe} className="flex space-x-2">
+                <Input 
+                  placeholder="Your email" 
+                  className="flex-1"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+                <Button size="sm" className="btn-glow" type="submit" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Subscribe"}
+                </Button>
+              </form>
             </div>
           </div>
         </div>
