@@ -175,8 +175,8 @@ const OrderSuccess = () => {
                 <Button variant="secondary" asChild>
                   <Link to="/contact">Contact Support</Link>
                 </Button>
-                <Button variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
-                  <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10" asChild>
+                  <a href="https://wa.me/918884162999" target="_blank" rel="noopener noreferrer">
                     WhatsApp Us
                   </a>
                 </Button>

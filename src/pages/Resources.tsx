@@ -1,13 +1,47 @@
-import { BookOpen, Video, FileText, Podcast, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { BookOpen, Video, FileText, Podcast, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const Resources = () => {
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("subscribe-newsletter", {
+        body: { email, source: "resources" },
+      });
+
+      if (error) throw error;
+      
+      toast.success(data.message || "Successfully subscribed!");
+      setEmail("");
+    } catch (error) {
+      console.error("Subscription error:", error);
+      toast.error("Failed to subscribe. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const articles = [
     {
+      slug: "10-superfoods-boost-immunity",
       category: "Nutrition",
       title: "10 Superfoods to Boost Your Immunity Naturally",
       excerpt: "Discover the power of nature's finest ingredients for a stronger immune system.",
@@ -15,6 +49,7 @@ const Resources = () => {
       date: "Nov 25, 2024",
     },
     {
+      slug: "sustainable-weight-management",
       category: "Weight Loss",
       title: "The Science Behind Sustainable Weight Management",
       excerpt: "Learn evidence-based strategies for long-term weight loss success.",
@@ -22,6 +57,7 @@ const Resources = () => {
       date: "Nov 22, 2024",
     },
     {
+      slug: "pre-post-workout-nutrition",
       category: "Fitness",
       title: "Pre and Post-Workout Nutrition Guide",
       excerpt: "Optimize your performance with proper nutrition timing and choices.",
@@ -29,6 +65,7 @@ const Resources = () => {
       date: "Nov 20, 2024",
     },
     {
+      slug: "managing-stress-holistic-wellness",
       category: "Wellness",
       title: "Managing Stress Through Holistic Wellness",
       excerpt: "Natural approaches to reduce stress and improve mental clarity.",
@@ -140,28 +177,30 @@ const Resources = () => {
             <TabsContent value="articles" className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {articles.map((article, index) => (
-                  <Card key={index} className="hover-lift cursor-pointer group">
-                    <CardHeader>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
-                          {article.category}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{article.date}</span>
-                      </div>
-                      <CardTitle className="text-xl group-hover:text-primary transition-smooth">
-                        {article.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="mb-4">{article.excerpt}</CardDescription>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">{article.readTime}</span>
-                        <Button variant="ghost" size="sm" className="group-hover:text-primary">
-                          Read More <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Link key={index} to={`/resources/${article.slug}`}>
+                    <Card className="hover-lift cursor-pointer group h-full">
+                      <CardHeader>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                            {article.category}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{article.date}</span>
+                        </div>
+                        <CardTitle className="text-xl group-hover:text-primary transition-smooth">
+                          {article.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CardDescription className="mb-4">{article.excerpt}</CardDescription>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{article.readTime}</span>
+                          <Button variant="ghost" size="sm" className="group-hover:text-primary">
+                            Read More <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </TabsContent>
@@ -259,14 +298,20 @@ const Resources = () => {
             <p className="text-lg text-muted-foreground mb-8">
               Subscribe to our newsletter for weekly wellness tips, product updates, and exclusive content.
             </p>
-            <div className="flex gap-2 max-w-md mx-auto">
-              <input
+            <form onSubmit={handleSubscribe} className="flex gap-2 max-w-md mx-auto">
+              <Input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg border bg-background"
+                className="flex-1"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                required
               />
-              <Button size="lg" className="btn-glow">Subscribe</Button>
-            </div>
+              <Button size="lg" className="btn-glow" type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Subscribe"}
+              </Button>
+            </form>
           </div>
         </div>
       </section>

@@ -1,12 +1,72 @@
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, MapPin, Clock, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 const Contact = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+    consent: false,
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.subject || !formData.message) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!formData.consent) {
+      toast.error("Please agree to receive communications");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("submit-contact", {
+        body: formData,
+      });
+
+      if (error) throw error;
+      
+      toast.success(data.message || "Message sent successfully!");
+      setIsSubmitted(true);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+        consent: false,
+      });
+    } catch (error) {
+      console.error("Contact form error:", error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const contactInfo = [
     {
       icon: Phone,
@@ -17,7 +77,7 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email",
-      details: ["pranu21m@gmail.com", "support@priyaherbalhub.com"],
+      details: ["pranu21m@gmail.com"],
       description: "24/7 Support",
     },
     {
@@ -85,68 +145,134 @@ const Contact = () => {
                 Fill out the form below and our team will get back to you within 24 hours.
               </p>
 
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium mb-2">
-                      First Name *
-                    </label>
-                    <Input id="firstName" placeholder="John" required />
+              {isSubmitted ? (
+                <Card className="border-primary">
+                  <CardContent className="pt-6 text-center">
+                    <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
+                    <h3 className="text-2xl font-bold mb-2">Thank You!</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Your message has been sent successfully. We'll get back to you within 24 hours.
+                    </p>
+                    <Button onClick={() => setIsSubmitted(false)}>Send Another Message</Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="firstName" className="block text-sm font-medium mb-2">
+                        First Name *
+                      </label>
+                      <Input 
+                        id="firstName" 
+                        placeholder="Enter your first name" 
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required 
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="lastName" className="block text-sm font-medium mb-2">
+                        Last Name *
+                      </label>
+                      <Input 
+                        id="lastName" 
+                        placeholder="Enter your last name" 
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required 
+                        disabled={isLoading}
+                      />
+                    </div>
                   </div>
+
                   <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium mb-2">
-                      Last Name *
+                    <label htmlFor="email" className="block text-sm font-medium mb-2">
+                      Email Address *
                     </label>
-                    <Input id="lastName" placeholder="Doe" required />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="yourname@example.com" 
+                      value={formData.email}
+                      onChange={handleChange}
+                      required 
+                      disabled={isLoading}
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email Address *
-                  </label>
-                  <Input id="email" type="email" placeholder="john@example.com" required />
-                </div>
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                      Phone Number
+                    </label>
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      placeholder="+91 98765 43210" 
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                    Phone Number
-                  </label>
-                  <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" />
-                </div>
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium mb-2">
+                      Subject *
+                    </label>
+                    <Input 
+                      id="subject" 
+                      placeholder="What is this regarding?" 
+                      value={formData.subject}
+                      onChange={handleChange}
+                      required 
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium mb-2">
-                    Subject *
-                  </label>
-                  <Input id="subject" placeholder="What is this regarding?" required />
-                </div>
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium mb-2">
+                      Message *
+                    </label>
+                    <Textarea
+                      id="message"
+                      placeholder="Tell us more about your inquiry..."
+                      rows={6}
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium mb-2">
-                    Message *
-                  </label>
-                  <Textarea
-                    id="message"
-                    placeholder="Tell us more about your inquiry..."
-                    rows={6}
-                    required
-                  />
-                </div>
+                  <div>
+                    <label className="flex items-start space-x-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="mt-1"
+                        checked={formData.consent}
+                        onChange={(e) => setFormData(prev => ({ ...prev, consent: e.target.checked }))}
+                        required 
+                        disabled={isLoading}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        I agree to receive communications from PriyaHerbalHub about products, services, and business opportunities.
+                      </span>
+                    </label>
+                  </div>
 
-                <div>
-                  <label className="flex items-start space-x-2">
-                    <input type="checkbox" className="mt-1" required />
-                    <span className="text-sm text-muted-foreground">
-                      I agree to receive communications from PriyaHerbalHub about products, services, and business opportunities.
-                    </span>
-                  </label>
-                </div>
-
-                <Button type="submit" size="lg" className="w-full btn-glow">
-                  Send Message
-                </Button>
-              </form>
+                  <Button type="submit" size="lg" className="w-full btn-glow" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Message"
+                    )}
+                  </Button>
+                </form>
+              )}
             </div>
 
             {/* Additional Info */}
@@ -180,7 +306,11 @@ const Contact = () => {
                       <span>Get answers to product questions</span>
                     </li>
                   </ul>
-                  <Button className="w-full btn-glow">Book Consultation</Button>
+                  <Button className="w-full btn-glow" asChild>
+                    <a href="https://wa.me/918884162999?text=Hi%2C%20I%20would%20like%20to%20book%20a%20free%20wellness%20consultation" target="_blank" rel="noopener noreferrer">
+                      Book Consultation
+                    </a>
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -213,7 +343,9 @@ const Contact = () => {
                       <span>Join a supportive community</span>
                     </li>
                   </ul>
-                  <Button variant="outline" className="w-full">Learn More</Button>
+                  <Button variant="outline" className="w-full" asChild>
+                    <a href="/business">Learn More</a>
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -225,7 +357,7 @@ const Contact = () => {
                   </p>
                   <div className="flex items-center space-x-2">
                     <Mail className="h-5 w-5" />
-                    <span className="text-sm">support@priyaherbalhub.com</span>
+                    <a href="mailto:pranu21m@gmail.com" className="text-sm hover:underline">pranu21m@gmail.com</a>
                   </div>
                 </CardContent>
               </Card>
