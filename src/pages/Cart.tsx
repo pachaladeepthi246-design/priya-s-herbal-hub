@@ -125,10 +125,10 @@ const Cart = () => {
 
                         <div className="text-right">
                           <div className="text-2xl font-bold text-primary">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ₹{(item.product.price * item.quantity).toLocaleString()}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${item.product.price.toFixed(2)} each
+                            ₹{item.product.price.toLocaleString()} each
                           </div>
                         </div>
                       </div>
@@ -148,34 +148,34 @@ const Cart = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Subtotal</span>
-                    <span>${getCartTotal().toFixed(2)}</span>
+                    <span>₹{getCartTotal().toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
-                    <span className="text-primary">Free</span>
+                    <span className="text-primary">{getCartTotal() > 2000 ? "Free" : "₹99"}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Tax</span>
-                    <span>${(getCartTotal() * 0.08).toFixed(2)}</span>
+                    <span>GST (18%)</span>
+                    <span>₹{Math.round(getCartTotal() * 0.18).toLocaleString()}</span>
                   </div>
                   
                   <div className="border-t border-border pt-3">
                     <div className="flex justify-between text-xl font-bold">
                       <span>Total</span>
                       <span className="text-primary">
-                        ${(getCartTotal() * 1.08).toFixed(2)}
+                        ₹{Math.round(getCartTotal() * 1.18 + (getCartTotal() > 2000 ? 0 : 99)).toLocaleString()}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <Button className="w-full h-12 text-lg btn-glow">
-                  Proceed to Checkout
+                <Button className="w-full h-12 text-lg btn-glow" asChild>
+                  <Link to="/checkout">Proceed to Checkout</Link>
                 </Button>
 
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <p className="flex items-center gap-2">
-                    ✓ Free shipping on orders over $50
+                    ✓ Free shipping on orders over ₹2,000
                   </p>
                   <p className="flex items-center gap-2">
                     ✓ 30-day money back guarantee
