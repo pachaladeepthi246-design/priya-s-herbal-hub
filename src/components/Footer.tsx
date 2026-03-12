@@ -137,20 +137,35 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} PriyaHerbalHub. All rights reserved.
-          </p>
-          <div className="flex space-x-6">
-            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
-              Terms of Service
-            </Link>
-            <Link to="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
-              Cookie Policy
-            </Link>
+        <div className="border-t mt-8 pt-8 space-y-4">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} PriyaHerbalHub. All rights reserved.
+            </p>
+            <div className="flex space-x-6">
+              <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
+                Terms of Service
+              </Link>
+              <Link to="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-smooth">
+                Cookie Policy
+              </Link>
+            </div>
+          </div>
+          <div className="text-center pt-4 border-t border-border/50">
+            <p className="text-xs text-muted-foreground">
+              Designed & Developed by{" "}
+              <a
+                href="https://www.guideitsol.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-primary hover:underline"
+              >
+                GUIDESOFT
+              </a>
+            </p>
           </div>
         </div>
       </div>
