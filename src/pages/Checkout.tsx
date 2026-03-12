@@ -402,13 +402,13 @@ const Checkout = () => {
                         <h3 className="font-semibold text-lg mb-4">Scan to Pay via UPI</h3>
                         <div className="inline-block p-4 bg-white rounded-xl shadow-lg">
                           <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=8884162999@ybl%26pn=Priya%20Herbal%20Hub%26am=${Math.round(total)}%26cu=INR`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=8884162999-4@ybl%26pn=Priya%20Herbal%20Hub%26am=${Math.round(total)}%26cu=INR`}
                             alt="UPI QR Code"
                             className="w-48 h-48"
                           />
                         </div>
                         <p className="mt-4 text-sm text-muted-foreground">
-                          UPI ID: <span className="font-mono font-medium text-foreground">8884162999@ybl</span>
+                          UPI ID: <span className="font-mono font-medium text-foreground">8884162999-4@ybl</span>
                         </p>
                         <p className="mt-2 text-lg font-bold text-primary">
                           Amount: ₹{Math.round(total).toLocaleString()}
