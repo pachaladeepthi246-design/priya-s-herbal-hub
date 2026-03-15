@@ -51,7 +51,7 @@ const Checkout = () => {
     script.async = true;
     document.body.appendChild(script);
   }, []);
-
+  const subtotal = getCartTotal();
 
   const discount = appliedPromo ? (subtotal * appliedPromo.discount) / 100 : 0;
   const shipping = subtotal > 2000 ? 0 : 99;
