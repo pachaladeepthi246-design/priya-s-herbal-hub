@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 import BMICalculator from "@/components/BMICalculator";
 import HeroSlider from "@/components/HeroSlider";
