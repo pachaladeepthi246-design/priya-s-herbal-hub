@@ -30,7 +30,7 @@ const Navbar = () => {
   const { getCartCount } = useCart();
   const { getWishlistCount } = useWishlist();
   const { getCompareCount } = useCompare();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   const productsByType = [
     { name: "Shakes & Smoothies", href: "/products?type=shake" },
