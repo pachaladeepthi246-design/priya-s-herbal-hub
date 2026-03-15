@@ -241,9 +241,6 @@ const Checkout = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Razorpay Script */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js" />
-      
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" asChild className="mb-6">
           <Link to="/cart"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Cart</Link>
