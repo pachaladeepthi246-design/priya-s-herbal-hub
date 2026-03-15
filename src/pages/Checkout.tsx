@@ -42,7 +42,17 @@ const Checkout = () => {
     pincode: "",
   });
 
-  const subtotal = getCartTotal();
+  // Load Razorpay script dynamically
+  useEffect(() => {
+    if (document.getElementById("razorpay-script")) return;
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+
   const discount = appliedPromo ? (subtotal * appliedPromo.discount) / 100 : 0;
   const shipping = subtotal > 2000 ? 0 : 99;
   const tax = (subtotal - discount) * 0.18;
