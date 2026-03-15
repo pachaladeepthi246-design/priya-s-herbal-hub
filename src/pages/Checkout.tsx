@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle2, Tag, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,17 @@ const Checkout = () => {
     pincode: "",
   });
 
+  // Load Razorpay script dynamically
+  useEffect(() => {
+    if (document.getElementById("razorpay-script")) return;
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
   const subtotal = getCartTotal();
+
   const discount = appliedPromo ? (subtotal * appliedPromo.discount) / 100 : 0;
   const shipping = subtotal > 2000 ? 0 : 99;
   const tax = (subtotal - discount) * 0.18;
@@ -240,9 +250,6 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      {/* Razorpay Script */}
-      <script src="https://checkout.razorpay.com/v1/checkout.js" />
       
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" asChild className="mb-6">

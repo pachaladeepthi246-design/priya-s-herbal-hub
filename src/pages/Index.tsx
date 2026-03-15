@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import TestimonialsCarousel from "@/components/TestimonialsCarousel";
 import BMICalculator from "@/components/BMICalculator";
 import HeroSlider from "@/components/HeroSlider";
@@ -33,6 +34,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title="Premium Herbal Nutrition & Wellness Products"
+        description="Transform your life with PriyaHerbalHub's premium herbal nutrition products. Achieve your health goals with scientifically-formulated supplements, shakes, and wellness solutions."
+        canonical="https://priyaherbalhub.com"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "PriyaHerbalHub",
+          url: "https://priyaherbalhub.com",
+          description: "Premium herbal nutrition and wellness products",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://priyaherbalhub.com/products?search={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
       <Navbar />
 
       {/* Hero Slider */}
